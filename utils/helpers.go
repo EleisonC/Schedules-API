@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -42,16 +43,22 @@ func TimeParser(s interface{}) (*time.Time, error){
 	return &t, nil
 }
 
-func ErrorHandler(w http.ResponseWriter, err error, message string) {
-	if err != nil {
+func ErrorHandler(w http.ResponseWriter, err1 error, message string) {
+	if err1 != nil {
 		errMessage := ErrMessageRes {
 			Message: message,
-			RawErrorMessage: err.Error(),
+			RawErrorMessage: err1.Error(),
 		}
-		errMes, _:= json.Marshal(errMessage)
+		errMes, err:= json.Marshal(errMessage)
+		if err != nil {
+			w.Header().Set("Content-Type", "pkglication/json")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+		}
 
 		w.Header().Set("Content-Type", "pkglication/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(errMes)
 	}
 }
+
