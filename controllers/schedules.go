@@ -32,7 +32,7 @@ func CreateScheduleType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add to database
-	res := scTyDataHolder.AddTypeToDB(w, &scTyDataHolder)
+	res := models.AddTypeToDB(w, &scTyDataHolder)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -40,8 +40,7 @@ func CreateScheduleType(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllScheduleTypes(w http.ResponseWriter, r *http.Request) {
-	var scTyDataHolder models.SchedulesType
-	result := scTyDataHolder.GetAllScheduleTyps(w)
+	result := models.GetAllScheduleTyps(w)
 	res, err := json.Marshal(result)
 	if err != nil {
 		utils.ErrorHandler(w, err, "Error Retriving Data")
@@ -53,7 +52,6 @@ func GetAllScheduleTypes(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteScheduleType(w http.ResponseWriter, r *http.Request) {
-	var scTyDataHolder models.SchedulesType
 	params := mux.Vars(r)
 	scTyID := params["scTyID"]
 
@@ -62,7 +60,7 @@ func DeleteScheduleType(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, err, "Error Delete Data")
 		return
 	}
-	result := scTyDataHolder.DeleteScheduleTypeDB(w, objId)
+	result := models.DeleteScheduleTypeDB(w, objId)
 
 	if result.DeletedCount == 0 {
 		message := "The Schedule Type with ID " + scTyID + " has not been deleted from the DB or does not exist"
@@ -108,9 +106,30 @@ func CreateSchedule(w http.ResponseWriter, r *http.Request) {
 		return 
 	}
 
+	if validateErr := validate.Struct(&scDataHolder); validateErr != nil {
+		utils.ErrorHandler(w, validateErr, "There was an error validating your data")
+		return
+	}
 	ownerObjID, err := primitive.ObjectIDFromHex(scDataHolder.OwnerID)
 	if err != nil { 
 		utils.ErrorHandler(w, err, "Invalid Owner Id ")
+		return
+	}
+
+	// validate the owner exists
+	if  errValOwnerID := models.ValidateOwnerDB(w, ownerObjID); errValOwnerID != nil {
+		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
+		return
+	}
+
+	// validate schedule type
+	scTyobjID, err := primitive.ObjectIDFromHex(scDataHolder.TypeID)
+	if err != nil { 
+		utils.ErrorHandler(w, err, "Invalid Schedule Type Id ")
+		return
+	}
+	if  errScTyID := models.ValidateScTypDB(w, scTyobjID); errScTyID != nil {
+		utils.ErrorHandler(w, errScTyID, "There was an error validating your data")
 		return
 	}
 
@@ -121,29 +140,7 @@ func CreateSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if validateErr := validate.Struct(&scDataHolder); validateErr != nil {
-		utils.ErrorHandler(w, validateErr, "There was an error validating your data")
-		return
-	}
-
-	// validate the owner exists
-	if  errValOwnerID := scDataHolder.ValidateOwnerDB(w, ownerObjID); errValOwnerID != nil {
-		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
-		return
-	}
-	// validate schedule type
-	scTyobjID, err := primitive.ObjectIDFromHex(scDataHolder.TypeID)
-	if err != nil { 
-		utils.ErrorHandler(w, err, "Invalid Schedule Type Id ")
-		return
-	}
-	
-	if  errValOwnerID := scDataHolder.ValidateScTypDB(w, scTyobjID); errValOwnerID != nil {
-		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
-		return
-	}
-
-	res := scDataHolder.AddToDB(w, &scDataHolder)
+	res := models.AddToDB(w, &scDataHolder)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -151,7 +148,6 @@ func CreateSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllSchedules(w http.ResponseWriter, r *http.Request) {
-	var scDataHolder models.SchedulesObj
 	params := mux.Vars(r)
 	ownerID := params["ownerID"]
 
@@ -161,12 +157,12 @@ func GetAllSchedules(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate the owner exists
-	if  errValOwnerID := scDataHolder.ValidateOwnerDB(w, objID); errValOwnerID != nil {
+	if  errValOwnerID := models.ValidateOwnerDB(w, objID); errValOwnerID != nil {
 		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
 		return
 	}
 
-	result := scDataHolder.GetFromDB(w, ownerID)
+	result := models.GetFromDB(w, ownerID)
 	res, err := json.Marshal(result)
 	if err != nil {
 		utils.ErrorHandler(w, err, "Error Retriving Data 2")
@@ -179,7 +175,6 @@ func GetAllSchedules(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOneSchedule(w http.ResponseWriter, r *http.Request) {
-	var scDataHolder models.SchedulesObj
 	params := mux.Vars(r)
 	ownerID := params["ownerID"]
 	scID := params["scID"]
@@ -189,7 +184,7 @@ func GetOneSchedule(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, err, "Error Retrieve Data")
 		return
 	}
-	if  errValOwnerID := scDataHolder.ValidateOwnerDB(w, objOwnerID); errValOwnerID != nil {
+	if  errValOwnerID := models.ValidateOwnerDB(w, objOwnerID); errValOwnerID != nil {
 		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
 		return
 	}
@@ -199,12 +194,12 @@ func GetOneSchedule(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, err, "Error Retrieve Data")
 		return
 	}
-	if  errScID := scDataHolder.ValidateScDB(w, objScID); errScID != nil {
+	if  errScID := models.ValidateScDB(w, objScID); errScID != nil {
 		utils.ErrorHandler(w, errScID, "Schedule might not exist")
 		return
 	}
 
-	result := scDataHolder.GetOneFrmDB(w, ownerID, objScID)
+	result := models.GetOneFrmDB(w, ownerID, objScID)
 	res, err := json.Marshal(result)
 	if err != nil {
 		utils.ErrorHandler(w, err, "Error Retriving Data")
@@ -227,15 +222,15 @@ func UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 		return 
 	}
 
+	if validateErr := validate.Struct(&scDataHolder); validateErr != nil {
+		utils.ErrorHandler(w, validateErr, "There was an error validating your data")
+		return
+	}
+
 	scDataHolder.DurTime = scDataHolder.EndTime.Sub(scDataHolder.StartTime)
 	if scDataHolder.DurTime < 0 {
 		err = errors.New("Error: Invaid Start Time or End Time")
 		utils.ErrorHandler(w, err, "There was an error validating your data")
-		return
-	}
-	
-	if validateErr := validate.Struct(&scDataHolder); validateErr != nil {
-		utils.ErrorHandler(w, validateErr, "There was an error validating your data")
 		return
 	}
 
@@ -259,24 +254,24 @@ func UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 
 
 	// validate the owner exists
-	if  errValOwnerID := scDataHolder.ValidateOwnerDB(w, ownerObjID); errValOwnerID != nil {
+	if  errValOwnerID := models.ValidateOwnerDB(w, ownerObjID); errValOwnerID != nil {
 		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
 		return
 	}
 
 	// validate schedule type
-	if  errScTyID := scDataHolder.ValidateScTypDB(w, scTyobjID); errScTyID != nil {
+	if  errScTyID := models.ValidateScTypDB(w, scTyobjID); errScTyID != nil {
 		utils.ErrorHandler(w, errScTyID, "Invalid schedule type")
 		return
 	}
 
 	// validate the schedule exists
-	if  errScID := scDataHolder.ValidateScDB(w, objID); errScID != nil {
+	if  errScID := models.ValidateScDB(w, objID); errScID != nil {
 		utils.ErrorHandler(w, errScID, "Schedule might not exist")
 		return
 	}
 
-	result := scDataHolder.UpdateScheduleFrmDB(w, objID, &scDataHolder, scDataHolder.OwnerID)
+	result := models.UpdateScheduleFrmDB(w, objID, &scDataHolder, scDataHolder.OwnerID)
 
 	if result.MatchedCount == 0 {
 		message := "The Schedule with ID " + scIDobj + " has not been updated or does not exist"
@@ -313,7 +308,6 @@ func UpdateSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteSchedule(w http.ResponseWriter, r *http.Request) {
-	var scDataHolder models.SchedulesObj
 	params := mux.Vars(r)
 	ownerID := params["ownerID"]
 	scID := params["scID"]
@@ -323,7 +317,7 @@ func DeleteSchedule(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, err, "Error Retrieve Data")
 		return
 	}
-	if  errValOwnerID := scDataHolder.ValidateOwnerDB(w, objOwnerID); errValOwnerID != nil {
+	if  errValOwnerID := models.ValidateOwnerDB(w, objOwnerID); errValOwnerID != nil {
 		utils.ErrorHandler(w, errValOwnerID, "There was an error validating your data")
 		return
 	}
@@ -333,12 +327,12 @@ func DeleteSchedule(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, err, "Error Retrieve Data")
 		return
 	}
-	if  errScID := scDataHolder.ValidateScDB(w, objScID); errScID != nil {
+	if  errScID := models.ValidateScDB(w, objScID); errScID != nil {
 		utils.ErrorHandler(w, errScID, "Schedule might not exist")
 		return
 	}
 
-	result := scDataHolder.DeleteScheduleFrmDB(w, objScID, ownerID)
+	result := models.DeleteScheduleFrmDB(w, objScID, ownerID)
 	message := "The Schedule with ID " + scID + " has been deleted"
 	count := result.ModifiedCount
 

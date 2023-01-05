@@ -40,7 +40,7 @@ var SchedulesDoc *mongo.Collection = configs.GetCollection(configs.DB, "Schedule
 var SchedulesTypeDoc *mongo.Collection = configs.GetCollection(configs.DB, "SchedulesType")
 var dogOwnerDoc *mongo.Collection = configs.GetCollection(configs.DB, "DogOwner")
 
-func (s SchedulesObj) AddToDB(w http.ResponseWriter, seObj *SchedulesObj)[]byte {
+func AddToDB(w http.ResponseWriter, seObj *SchedulesObj)[]byte {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	result, err := SchedulesDoc.InsertOne(ctx, *seObj)
@@ -54,7 +54,7 @@ func (s SchedulesObj) AddToDB(w http.ResponseWriter, seObj *SchedulesObj)[]byte 
 	return res
 }
 
-func (st SchedulesType) AddTypeToDB(w http.ResponseWriter, scTyData *SchedulesType)[]byte {
+func AddTypeToDB(w http.ResponseWriter, scTyData *SchedulesType)[]byte {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	result, err := SchedulesTypeDoc.InsertOne(ctx, *scTyData)
@@ -69,7 +69,7 @@ func (st SchedulesType) AddTypeToDB(w http.ResponseWriter, scTyData *SchedulesTy
 	return res
 }
 
-func (s SchedulesObj) GetFromDB(w http.ResponseWriter, ownerObjID string)[]SchedulesObj {
+func GetFromDB(w http.ResponseWriter, ownerObjID string)[]SchedulesObj {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"delValue": false, "ownerId": ownerObjID}
@@ -89,7 +89,7 @@ func (s SchedulesObj) GetFromDB(w http.ResponseWriter, ownerObjID string)[]Sched
 	return scObjArray
 }
 
-func (st SchedulesType) GetAllScheduleTyps(w http.ResponseWriter)[]SchedulesType {
+func GetAllScheduleTyps(w http.ResponseWriter)[]SchedulesType {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	results, err := SchedulesTypeDoc.Find(ctx, bson.M{})
@@ -108,7 +108,7 @@ func (st SchedulesType) GetAllScheduleTyps(w http.ResponseWriter)[]SchedulesType
 	return scTypObjArray
 }
 
-func (s SchedulesObj) GetOneFrmDB(w http.ResponseWriter, owenrObjID string, scID primitive.ObjectID)SchedulesObj {
+func GetOneFrmDB(w http.ResponseWriter, owenrObjID string, scID primitive.ObjectID)SchedulesObj {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	var scObj SchedulesObj
 	defer cancel()
@@ -119,7 +119,7 @@ func (s SchedulesObj) GetOneFrmDB(w http.ResponseWriter, owenrObjID string, scID
 	return scObj
 }
 
-func (s SchedulesObj) UpdateScheduleFrmDB(w http.ResponseWriter, scID primitive.ObjectID, scData *SchedulesObj, owenrObjID string)*mongo.UpdateResult{
+func UpdateScheduleFrmDB(w http.ResponseWriter, scID primitive.ObjectID, scData *SchedulesObj, owenrObjID string)*mongo.UpdateResult{
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": scID, "delValue": false, "ownerId": owenrObjID}
@@ -137,7 +137,7 @@ func (s SchedulesObj) UpdateScheduleFrmDB(w http.ResponseWriter, scID primitive.
 	return result
 }
 
-func (s SchedulesObj) DeleteScheduleFrmDB(w http.ResponseWriter, scID primitive.ObjectID, ownerObjID string)*mongo.UpdateResult {
+func DeleteScheduleFrmDB(w http.ResponseWriter, scID primitive.ObjectID, ownerObjID string)*mongo.UpdateResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": scID, "ownerId": ownerObjID}
@@ -149,7 +149,7 @@ func (s SchedulesObj) DeleteScheduleFrmDB(w http.ResponseWriter, scID primitive.
 	return delResult
 }
 
-func (st SchedulesType) DeleteScheduleTypeDB(w http.ResponseWriter, scID primitive.ObjectID) *mongo.DeleteResult {
+func DeleteScheduleTypeDB(w http.ResponseWriter, scID primitive.ObjectID) *mongo.DeleteResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": scID}
@@ -160,7 +160,7 @@ func (st SchedulesType) DeleteScheduleTypeDB(w http.ResponseWriter, scID primiti
 	return delResult
 }
 
-func (s SchedulesObj) ValidateOwnerDB(w http.ResponseWriter, ownerID primitive.ObjectID) error{
+func ValidateOwnerDB(w http.ResponseWriter, ownerID primitive.ObjectID) error{
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": ownerID}
@@ -173,7 +173,7 @@ func (s SchedulesObj) ValidateOwnerDB(w http.ResponseWriter, ownerID primitive.O
 	return nil
 }
 
-func (s SchedulesObj) ValidateScDB(w http.ResponseWriter, scID primitive.ObjectID) error{
+func ValidateScDB(w http.ResponseWriter, scID primitive.ObjectID) error{
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": scID, "delValue": false}
@@ -185,7 +185,7 @@ func (s SchedulesObj) ValidateScDB(w http.ResponseWriter, scID primitive.ObjectI
 	return nil
 }
 
-func (s SchedulesObj) ValidateScTypDB(w http.ResponseWriter, scTypID primitive.ObjectID) error{
+func ValidateScTypDB(w http.ResponseWriter, scTypID primitive.ObjectID) error{
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	filter := bson.M{"_id": scTypID}
